@@ -12,7 +12,6 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/d2r2/go-shell"
 	"github.com/davecgh/go-spew/spew"
 )
 
@@ -172,12 +171,7 @@ func decodeDHTxxPulses(sensorType SensorType, pulses []Pulse) (temperature float
 				"calculated checksum(%v=%v+%v+%v+%v)",
 			sum, calcSum, b0, b1, b2, b3))
 		return -1, -1, err
-	} else {
-		lg.Debugf("CRCs verified: checksum from sensor(%v) = calculated checksum(%v=%v+%v+%v+%v)",
-			sum, calcSum, b0, b1, b2, b3)
 	}
-	// Debug output for 5 bytes
-	lg.Debugf("Decoded from DHTxx sensor: [%d, %d, %d, %d, %d]", b0, b1, b2, b3, sum)
 	// Extract temprature and humidity depending on sensor type
 	temperature, humidity = 0.0, 0.0
 	if sensorType == DHT11 {
@@ -206,7 +200,6 @@ func printPulseArrayForDebug(pulses []Pulse) {
 	// 		pulse.Value, pulse.Duration))
 	// }
 	// lg.Debugf("Pulse count %d:\n%v", len(pulses), buf.String())
-	lg.Debugf("Pulses received from DHTxx sensor: %v", pulses)
 }
 
 // Send activation request to DHTxx sensor via specific pin.
@@ -258,14 +251,12 @@ func ReadDHTxx(sensorType SensorType, pin int,
 // 4) error if present.
 func ReadDHTxxWithRetry(sensorType SensorType, pin int, boostPerfFlag bool,
 	retry int) (temperature float32, humidity float32, retried int, err error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	shell.CloseContextOnKillSignal(cancel)
+	ctx, _ := context.WithCancel(context.Background())
 	retried = 0
 	for {
 		temp, hum, err := ReadDHTxx(sensorType, pin, boostPerfFlag)
 		if err != nil {
 			if retry > 0 {
-				lg.Warning(err)
 				retry--
 				retried++
 				select {
